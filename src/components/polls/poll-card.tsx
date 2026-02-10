@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import { Trash2Icon } from "lucide-react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -29,6 +30,7 @@ interface PollCardProps {
   isAdmin?: boolean;
   onVote?: (pollId: string, optionId: string) => void;
   onVoted?: () => void;
+  onDelete?: (pollId: string) => void;
 }
 
 export function PollCard({
@@ -37,6 +39,7 @@ export function PollCard({
   isAdmin,
   onVote,
   onVoted,
+  onDelete,
 }: PollCardProps) {
   const [selectedOptionId, setSelectedOptionId] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -67,6 +70,17 @@ export function PollCard({
     }
   }, [poll.id, poll.votes, selectedOptionId, currentEmployeeId, onVote, onVoted]);
 
+  const handleDelete = useCallback(
+    (e: React.MouseEvent) => {
+      e.stopPropagation();
+      if (!onDelete) return;
+      if (window.confirm("Opravdu smazat tuto anketu?")) {
+        onDelete(poll.id);
+      }
+    },
+    [poll.id, onDelete]
+  );
+
   const optionVoteCounts = poll.options.map((opt) => ({
     ...opt,
     count: localVotes
@@ -81,15 +95,29 @@ export function PollCard({
           <h3 className="font-semibold text-[var(--color-alveno-text)] pr-2">
             {poll.title}
           </h3>
-          <Badge
-            className={cn(
-              poll.isActive
-                ? "bg-[var(--color-alveno-success)] text-white"
-                : "bg-gray-500/90 text-white"
+          <div className="flex items-center gap-2 shrink-0 flex-wrap">
+            {isAdmin && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon-sm"
+                className="text-[var(--color-alveno-danger)] hover:bg-red-50 hover:text-[var(--color-alveno-danger)]"
+                onClick={handleDelete}
+                aria-label="Smazat anketu"
+              >
+                <Trash2Icon className="size-4" />
+              </Button>
             )}
-          >
-            {poll.isActive ? "Aktivní" : "Ukončená"}
-          </Badge>
+            <Badge
+              className={cn(
+                poll.isActive
+                  ? "bg-[var(--color-alveno-success)] text-white"
+                  : "bg-gray-500/90 text-white"
+              )}
+            >
+              {poll.isActive ? "Aktivní" : "Ukončená"}
+            </Badge>
+          </div>
         </div>
         {poll.description && (
           <p className="text-sm text-[var(--color-alveno-text-light)]">

@@ -70,8 +70,20 @@ export function UnreadAnnouncementsTile({
     const timer = setTimeout(() => {
       fetchList();
     }, 100);
-    return () => clearTimeout(timer);
-  }, [employee?.id]); // Pouze když se změní employee ID, ne celý fetchList
+    
+    // Automatické obnovení při návratu na stránku (focus event)
+    const handleFocus = () => {
+      if (employee?.id) {
+        fetchList();
+      }
+    };
+    window.addEventListener("focus", handleFocus);
+    
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener("focus", handleFocus);
+    };
+  }, [employee?.id, fetchList]); // Pouze když se změní employee ID
 
   const handleMarkRead = useCallback(
     async (announcementId: string) => {

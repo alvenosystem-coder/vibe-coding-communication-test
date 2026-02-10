@@ -45,6 +45,13 @@ export default function HomePage() {
 
   useEffect(() => {
     loadDashboard();
+    
+    // Automatické obnovení při návratu na stránku (focus event)
+    const handleFocus = () => {
+      loadDashboard();
+    };
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
   }, [loadDashboard]);
 
   return (

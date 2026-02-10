@@ -33,6 +33,13 @@ export function ActivePollsTile({ maxItems = 3 }: ActivePollsTileProps) {
 
   useEffect(() => {
     fetchList();
+    
+    // Automatické obnovení při návratu na stránku (focus event)
+    const handleFocus = () => {
+      fetchList();
+    };
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
   }, [fetchList]);
 
   const handleVote = useCallback(
@@ -57,6 +64,20 @@ export function ActivePollsTile({ maxItems = 3 }: ActivePollsTileProps) {
     },
     [employee?.id, fetchList]
   );
+
+  const handleDelete = useCallback(async (pollId: string) => {
+    try {
+      const res = await fetch(`/api/polls/${pollId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) return;
+      setList((prev) => prev.filter((p) => p.id !== pollId));
+      toast.success("Anketa byla smazána");
+      fetchList(); // Obnov seznam
+    } catch {
+      toast.error("Nepodařilo se smazat anketu");
+    }
+  }, [fetchList]);
 
   if (loading) {
     return (
@@ -84,6 +105,7 @@ export function ActivePollsTile({ maxItems = 3 }: ActivePollsTileProps) {
           isAdmin={isAdmin}
           onVote={handleVote}
           onVoted={fetchList}
+          onDelete={handleDelete}
         />
       ))}
     </div>

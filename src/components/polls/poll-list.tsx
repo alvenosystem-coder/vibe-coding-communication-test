@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { toast } from "sonner";
 import { useUser } from "@/lib/user-context";
 import { cn } from "@/lib/utils";
 import { PollCard, type PollWithDetails } from "./poll-card";
@@ -41,6 +42,19 @@ export function PollList() {
     [employee?.id]
   );
 
+  const handleDelete = useCallback(async (pollId: string) => {
+    try {
+      const res = await fetch(`/api/polls/${pollId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) return;
+      setList((prev) => prev.filter((p) => p.id !== pollId));
+      toast.success("Anketa byla smazána");
+    } catch {
+      toast.error("Nepodařilo se smazat anketu");
+    }
+  }, []);
+
   if (loading) {
     return (
       <div className="text-center py-8 text-[var(--color-alveno-text-light)]">
@@ -70,6 +84,7 @@ export function PollList() {
             isAdmin={isAdmin}
             onVote={handleVote}
             onVoted={fetchList}
+            onDelete={handleDelete}
           />
         </div>
       ))}
