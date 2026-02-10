@@ -39,6 +39,18 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
+    // Ověř, že zaměstnanec s authorId existuje v databázi
+    const author = await prisma.employee.findUnique({
+      where: { id: authorId },
+      select: { id: true },
+    });
+    if (!author) {
+      return NextResponse.json(
+        { error: "Zaměstnanec neexistuje. Prosím, synchronizujte zaměstnance z HR systému." },
+        { status: 400 }
+      );
+    }
+
     const pr: "low" | "normal" | "high" | "urgent" = 
       priority && ["low", "normal", "high", "urgent"].includes(priority)
         ? (priority as "low" | "normal" | "high" | "urgent")
