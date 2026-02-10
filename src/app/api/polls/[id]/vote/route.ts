@@ -1,4 +1,4 @@
-import { prisma, ensureDatabase } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
 /** Odeslání hlasu (jedna možnost na anketu na zaměstnance) */
@@ -7,7 +7,6 @@ export async function POST(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    await ensureDatabase();
     const { id: pollId } = await params;
     const body = await request.json();
     const { optionId, employeeId } = body as { optionId: string; employeeId: string };
