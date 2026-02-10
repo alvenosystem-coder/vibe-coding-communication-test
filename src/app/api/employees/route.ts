@@ -1,9 +1,10 @@
-import { prisma } from "@/lib/prisma";
+import { prisma, ensureDatabase } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
 /** Seznam zaměstnanců z lokální DB včetně oddělení (pro UserSwitcher). */
 export async function GET() {
   try {
+    await ensureDatabase();
     const employees = await prisma.employee.findMany({
       where: { isActive: true, isDisabled: false },
       include: { operation: true },
