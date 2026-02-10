@@ -15,7 +15,7 @@ export async function GET() {
       { 
         success: false, 
         error: errorMessage,
-        hint: "Zkontrolujte /api/alveno/diagnose pro detailní informace o environment variables"
+        hint: "Zkontrolujte /api/debug/config pro detailní informace o environment variables"
       },
       { status: 500 }
     );
