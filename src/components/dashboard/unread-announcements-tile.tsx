@@ -16,9 +16,30 @@ export function UnreadAnnouncementsTile({
   onUnreadCountChange,
   maxItems = 5,
 }: UnreadAnnouncementsTileProps) {
-  const { employee, isAdmin } = useUser();
+  const { employee, isAdmin, setEmployee } = useUser();
   const [list, setList] = useState<AnnouncementWithAuthor[]>([]);
   const [loading, setLoading] = useState(true);
+  const [autoLoadingEmployee, setAutoLoadingEmployee] = useState(false);
+
+  // Automaticky načti prvního zaměstnance, pokud není nastavený (např. v iframe)
+  useEffect(() => {
+    if (!employee && !autoLoadingEmployee) {
+      setAutoLoadingEmployee(true);
+      fetch("/api/employees")
+        .then((res) => res.json())
+        .then((employees: Array<{ id: string; firstName: string; lastName: string }>) => {
+          if (Array.isArray(employees) && employees.length > 0) {
+            setEmployee(employees[0] as any);
+          }
+        })
+        .catch(() => {
+          // ignore
+        })
+        .finally(() => {
+          setAutoLoadingEmployee(false);
+        });
+    }
+  }, [employee, autoLoadingEmployee, setEmployee]);
 
   const fetchList = useCallback(async () => {
     if (!employee?.id) {
@@ -103,10 +124,18 @@ export function UnreadAnnouncementsTile({
     [employee?.id, fetchList]
   );
 
-  if (loading) {
+  if (loading || autoLoadingEmployee) {
     return (
       <div className="text-center py-4 text-[var(--color-alveno-text-light)] text-sm">
         Načítám oznámení…
+      </div>
+    );
+  }
+
+  if (!employee) {
+    return (
+      <div className="text-center py-4 text-[var(--color-alveno-text-light)] text-sm">
+        Není vybrán zaměstnanec. Prosím, vyberte zaměstnance v hlavní aplikaci.
       </div>
     );
   }
