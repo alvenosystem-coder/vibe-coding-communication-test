@@ -132,6 +132,10 @@ export async function syncAll(): Promise<{
   operations: number;
 }> {
   getConfig(); // ověření env na začátku
+  // Zajisti, že databáze existuje (volá se i z automatické synchronizace)
+  const { ensureDatabase } = await import("@/lib/prisma");
+  await ensureDatabase();
+  
   const operations = await fetchOperations();
   for (const op of operations) {
     await prisma.operation.upsert({

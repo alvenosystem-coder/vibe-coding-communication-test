@@ -1,4 +1,5 @@
 import { prisma, ensureDatabase } from "@/lib/prisma";
+import { syncAll } from "@/lib/alveno-api";
 import { NextResponse } from "next/server";
 
 /** Seznam anket s autorem, možnostmi a počty hlasů */
@@ -51,15 +52,35 @@ export async function POST(request: Request) {
     }
 
     // Ověř, že zaměstnanec s authorId existuje v databázi
-    const author = await prisma.employee.findUnique({
+    let author = await prisma.employee.findUnique({
       where: { id: authorId },
       select: { id: true },
     });
+    
+    // Pokud zaměstnanec neexistuje, zkus automatickou synchronizaci (databáze mohla být resetována)
     if (!author) {
-      return NextResponse.json(
-        { error: "Zaměstnanec neexistuje. Prosím, synchronizujte zaměstnance z HR systému." },
-        { status: 400 }
-      );
+      console.log("Zaměstnanec neexistuje, spouštím automatickou synchronizaci...");
+      try {
+        await syncAll();
+        // Zkus znovu najít zaměstnance
+        author = await prisma.employee.findUnique({
+          where: { id: authorId },
+          select: { id: true },
+        });
+      } catch (syncError) {
+        console.error("Automatická synchronizace selhala:", syncError);
+      }
+      
+      // Pokud stále neexistuje, vrať chybu
+      if (!author) {
+        return NextResponse.json(
+          { 
+            error: "Zaměstnanec neexistuje. Databáze byla pravděpodobně resetována. Zkuste obnovit stránku a synchronizovat zaměstnance.",
+            hint: "Na Vercelu se databáze resetuje mezi deploymenty. Pro perzistentní data použijte Vercel Postgres."
+          },
+          { status: 400 }
+        );
+      }
     }
 
     const poll = await prisma.poll.create({
