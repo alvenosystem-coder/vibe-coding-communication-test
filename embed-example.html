@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="cs">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alveno - Komunikační centrum - Ankety</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #f5f5f5;
+        }
+        .iframe-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        iframe {
+            width: 100%;
+            border: 0;
+            display: block;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Komunikační centrum - Aktuální ankety</h1>
+    <div class="iframe-container">
+        <!-- Nahraďte YOUR_VERCEL_URL za URL vaší Vercel aplikace -->
+        <iframe 
+            src="https://YOUR_VERCEL_URL.vercel.app/embed/polls"
+            height="800"
+            title="Aktuální ankety"
+            allow="clipboard-read; clipboard-write"
+        ></iframe>
+    </div>
+</body>
+</html>

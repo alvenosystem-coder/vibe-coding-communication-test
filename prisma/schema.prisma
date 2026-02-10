@@ -1,0 +1,101 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Operation {
+  id         String    @id
+  name       String
+  isDisabled Boolean   @default(false)
+  syncedAt   DateTime  @default(now())
+  employees  Employee[]
+}
+
+model Employee {
+  id             String    @id
+  firstName      String
+  lastName       String
+  email          String?
+  jobTitle       String    @default("")
+  personalNumber String    @default("")
+  gender         String    @default("")
+  isActive       Boolean   @default(true)
+  isDisabled     Boolean   @default(false)
+  operationId    String?
+  operation      Operation? @relation(fields: [operationId], references: [id])
+  syncedAt       DateTime  @default(now())
+
+  announcements Announcement[]
+  votes         Vote[]
+  polls         Poll[]
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  content   String
+  priority  String   @default("normal")
+  authorId  String
+  author    Employee @relation(fields: [authorId], references: [id])
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  readBy    AnnouncementRead[]
+}
+
+model AnnouncementRead {
+  id             String       @id @default(cuid())
+  announcementId String
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  employeeId     String
+  readAt         DateTime     @default(now())
+
+  @@unique([announcementId, employeeId])
+}
+
+model Poll {
+  id          String       @id @default(cuid())
+  title       String
+  description String?
+  authorId    String
+  author      Employee     @relation(fields: [authorId], references: [id])
+  isActive    Boolean      @default(true)
+  expiresAt   DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  options     PollOption[]
+  votes       Vote[]
+}
+
+model PollOption {
+  id     String @id @default(cuid())
+  text   String
+  pollId String
+  poll   Poll   @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  votes  Vote[]
+}
+
+model Vote {
+  id         String     @id @default(cuid())
+  pollId     String
+  poll       Poll       @relation(fields: [pollId], references: [id], onDelete: Cascade)
+  optionId   String
+  option     PollOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  employeeId String
+  employee   Employee   @relation(fields: [employeeId], references: [id])
+  createdAt  DateTime   @default(now())
+
+  @@unique([pollId, employeeId])
+}
+
+model Notification {
+  id         String   @id @default(cuid())
+  type       String
+  refId      String
+  title      String
+  employeeId String
+  isRead     Boolean  @default(false)
+  createdAt  DateTime @default(now())
+}
