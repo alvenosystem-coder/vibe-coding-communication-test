@@ -9,18 +9,31 @@ function getConfig() {
   const ALVENO_API_URL = process.env.ALVENO_API_URL;
   const ALVENO_API_KEY = process.env.ALVENO_API_KEY;
   const ALVENO_TENANT = process.env.ALVENO_TENANT;
+  const isVercel = !!process.env.VERCEL;
+  
   if (!ALVENO_API_URL?.startsWith("http")) {
+    const location = isVercel 
+      ? "Vercel dashboardu (Settings > Environment Variables)"
+      : ".env.local";
     throw new Error(
-      "Chybí ALVENO_API_URL v .env.local (např. https://hr.alveno.cz/api/external). Restartujte dev server po úpravě .env.local."
+      `Chybí ALVENO_API_URL v ${location}. Nastavte: ALVENO_API_URL=https://hr.alveno.cz/api/external`
     );
   }
   if (!ALVENO_API_KEY || ALVENO_API_KEY === "sem_vlozit_api_klic") {
+    const location = isVercel 
+      ? "Vercel dashboardu (Settings > Environment Variables)"
+      : ".env.local";
     throw new Error(
-      "V .env.local nastavte platný ALVENO_API_KEY. Restartujte dev server po úpravě."
+      `V ${location} nastavte platný ALVENO_API_KEY. Zkopírujte hodnotu z .env.local do Vercel dashboardu.`
     );
   }
   if (!ALVENO_TENANT) {
-    throw new Error("Chybí ALVENO_TENANT v .env.local (např. 06777198).");
+    const location = isVercel 
+      ? "Vercel dashboardu (Settings > Environment Variables)"
+      : ".env.local";
+    throw new Error(
+      `Chybí ALVENO_TENANT v ${location}. Nastavte: ALVENO_TENANT=06777198`
+    );
   }
   return {
     ALVENO_API_URL,
