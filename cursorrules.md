@@ -41,7 +41,15 @@ Funkční MVP demo, které ukáže pět hlavních funkcí:
 - Aplikace je nasazena na **Vercel** pro produkční provoz
 - Automatické deploymenty při pushnutí do `main` branch
 - Environment proměnné (`ALVENO_API_URL`, `ALVENO_API_KEY`, `ALVENO_TENANT`, `DATABASE_URL`) musí být nastaveny v Vercel dashboardu
-- **Důležité:** Pro SQLite databázi na Vercelu je potřeba použít **Vercel Postgres** nebo jinou cloudovou databázi (SQLite soubory se nepřetrvávají mezi deploymenty)
+- **DŮLEŽITÉ - DATABÁZE:**
+  - **Na localhostu:** SQLite funguje perfektně, data jsou perzistentní v souboru `prisma/dev.db`
+  - **Na Vercelu:** SQLite v `/tmp` se resetuje mezi serverless funkcemi a deploymenty - **data nejsou perzistentní**
+  - **Pro produkci na Vercelu:** Je **nutné** napojit cloudovou databázi:
+    - **Vercel Postgres** (doporučeno pro Vercel)
+    - **Supabase** (PostgreSQL)
+    - **Azure Database** (PostgreSQL/MySQL)
+    - Jiná cloudová databáze
+  - Aktuální stav: Aplikace funguje na localhostu, na Vercelu je potřeba napojit perzistentní databázi pro produkční provoz
 
 ### Iframe Integration
 - Aplikace je připravena pro vložení do HR systému Alveno přes `<iframe>`
@@ -256,6 +264,10 @@ komunikacni-centrum/
 
 ## 🗄 DATABÁZOVÝ MODEL (Prisma Schema)
 
+**Aktuální konfigurace:**
+- Používá **SQLite** pro lokální vývoj
+- Na Vercelu je potřeba změnit na PostgreSQL (Vercel Postgres, Supabase, Azure, atd.)
+
 ```prisma
 generator client {
   provider = "prisma-client-js"
@@ -263,7 +275,8 @@ generator client {
 
 datasource db {
   provider = "sqlite"
-  url      = "file:./dev.db"
+  // Na Vercelu změnit na: provider = "postgresql"
+  // a nastavit DATABASE_URL v environment variables
 }
 
 // Oddělení synchronizovaná z Alveno HR API
