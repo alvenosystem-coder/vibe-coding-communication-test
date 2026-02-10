@@ -107,11 +107,30 @@ const INIT_MIGRATION_STATEMENTS = [
   `CREATE UNIQUE INDEX IF NOT EXISTS "Vote_pollId_employeeId_key" ON "Vote"("pollId", "employeeId")`,
 ];
 
+// Funkce pro kontrolu, jestli tabulky existují
+async function checkTablesExist(): Promise<boolean> {
+  const tempPrisma = new PrismaClient({
+    adapter,
+    log: ["error"],
+  });
+  try {
+    // Zkus dotaz na první tabulku - pokud existuje, schéma je pravděpodobně kompletní
+    await tempPrisma.$queryRaw`SELECT 1 FROM Operation LIMIT 1`;
+    await tempPrisma.$disconnect();
+    return true;
+  } catch {
+    await tempPrisma.$disconnect();
+    return false;
+  }
+}
+
 // Funkce pro spuštění migrací pokud ještě neběžely
 // Idempotentní: při každém startu projde všechny CREATE TABLE/INDEX příkazy
 // a ignoruje "already exists" chyby – tím se dopočítají i nově přidané tabulky.
 async function ensureMigrations() {
-  if (globalForPrisma.migrationsRun) return;
+  // Na Vercelu se global state resetuje mezi požadavky, takže kontrolujeme přímo v DB
+  const tablesExist = await checkTablesExist();
+  if (tablesExist && globalForPrisma.migrationsRun) return;
 
   const tempPrisma = new PrismaClient({
     adapter,

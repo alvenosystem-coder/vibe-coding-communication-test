@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 /** Seznam oznámení s autorem a oddělením, od nejnovějších */
 export async function GET() {
   try {
+    await ensureDatabase();
     const announcements = await prisma.announcement.findMany({
       orderBy: { createdAt: "desc" },
       include: {
@@ -24,6 +25,7 @@ export async function GET() {
 /** Vytvoření oznámení + notifikace pro všechny aktivní zaměstnance kromě autora */
 export async function POST(request: Request) {
   try {
+    await ensureDatabase();
     const body = await request.json();
     const { title, content, priority, authorId } = body as {
       title: string;

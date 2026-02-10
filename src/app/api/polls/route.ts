@@ -4,6 +4,7 @@ import { NextResponse } from "next/server";
 /** Seznam anket s autorem, možnostmi a počty hlasů */
 export async function GET() {
   try {
+    await ensureDatabase();
     const polls = await prisma.poll.findMany({
       orderBy: [{ isActive: "desc" }, { createdAt: "desc" }],
       include: {
@@ -27,6 +28,7 @@ export async function GET() {
 /** Vytvoření ankety + notifikace pro všechny aktivní zaměstnance kromě autora */
 export async function POST(request: Request) {
   try {
+    await ensureDatabase();
     const body = await request.json();
     const { title, description, options, authorId } = body as {
       title: string;
