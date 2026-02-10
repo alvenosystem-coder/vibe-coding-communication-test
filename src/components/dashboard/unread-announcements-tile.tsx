@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { toast } from "sonner";
 import { useUser } from "@/lib/user-context";
 import { AnnouncementCard, type AnnouncementWithAuthor } from "@/components/announcements/announcement-card";
@@ -19,31 +19,29 @@ export function UnreadAnnouncementsTile({
   const { employee, isAdmin, setEmployee } = useUser();
   const [list, setList] = useState<AnnouncementWithAuthor[]>([]);
   const [loading, setLoading] = useState(true);
-  const [autoLoadingEmployee, setAutoLoadingEmployee] = useState(false);
+  const autoLoadAttempted = useRef(false);
 
-  // Automaticky načti prvního zaměstnance, pokud není nastavený (např. v iframe)
+  // Automaticky načti prvního zaměstnance, pokud není nastavený (pouze jednou)
   useEffect(() => {
-    if (!employee && !autoLoadingEmployee) {
-      setAutoLoadingEmployee(true);
+    if (!employee && !autoLoadAttempted.current) {
+      autoLoadAttempted.current = true;
       fetch("/api/employees")
         .then((res) => res.json())
         .then((employees: Array<{ id: string; firstName: string; lastName: string }>) => {
-          if (Array.isArray(employees) && employees.length > 0) {
+          if (Array.isArray(employees) && employees.length > 0 && !employee) {
             setEmployee(employees[0] as any);
           }
         })
         .catch(() => {
           // ignore
-        })
-        .finally(() => {
-          setAutoLoadingEmployee(false);
         });
     }
-  }, [employee, autoLoadingEmployee, setEmployee]);
+  }, [employee, setEmployee]);
 
   const fetchList = useCallback(async () => {
     if (!employee?.id) {
       setLoading(false);
+      setList([]);
       return;
     }
     const employeeId = employee.id;
@@ -57,6 +55,8 @@ export function UnreadAnnouncementsTile({
         );
         setList(unread.slice(0, maxItems));
         onUnreadCountChange?.(unread.length);
+      } else {
+        setList([]);
       }
     } catch {
       setList([]);
@@ -66,8 +66,12 @@ export function UnreadAnnouncementsTile({
   }, [employee?.id, maxItems, onUnreadCountChange]);
 
   useEffect(() => {
-    fetchList();
-  }, [fetchList]);
+    // Počkej malou chvíli, aby se employee mohl načíst z localStorage
+    const timer = setTimeout(() => {
+      fetchList();
+    }, 100);
+    return () => clearTimeout(timer);
+  }, [employee?.id]); // Pouze když se změní employee ID, ne celý fetchList
 
   const handleMarkRead = useCallback(
     async (announcementId: string) => {
@@ -124,7 +128,7 @@ export function UnreadAnnouncementsTile({
     [employee?.id, fetchList]
   );
 
-  if (loading || autoLoadingEmployee) {
+  if (loading) {
     return (
       <div className="text-center py-4 text-[var(--color-alveno-text-light)] text-sm">
         Načítám oznámení…
