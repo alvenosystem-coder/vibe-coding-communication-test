@@ -108,43 +108,40 @@ const INIT_MIGRATION_STATEMENTS = [
 ];
 
 // Funkce pro spuštění migrací pokud ještě neběžely
+// Idempotentní: při každém startu projde všechny CREATE TABLE/INDEX příkazy
+// a ignoruje "already exists" chyby – tím se dopočítají i nově přidané tabulky.
 async function ensureMigrations() {
   if (globalForPrisma.migrationsRun) return;
-  
+
   const tempPrisma = new PrismaClient({
     adapter,
     log: ["error"],
   });
-  
+
+  console.log("Ensuring database schema...");
   try {
-    // Zkus zkontrolovat, jestli tabulka Operation existuje
-    await tempPrisma.$queryRaw`SELECT 1 FROM Operation LIMIT 1`;
-    globalForPrisma.migrationsRun = true;
-    await tempPrisma.$disconnect();
-  } catch {
-    // Tabulka neexistuje, spusť migrace pomocí SQL
-    console.log("Running database migrations...");
-    try {
-      // Spusť každý SQL příkaz zvlášť (Prisma nepodporuje více příkazů najednou)
-      for (const statement of INIT_MIGRATION_STATEMENTS) {
-        try {
-          await tempPrisma.$executeRawUnsafe(statement);
-        } catch (stmtError) {
-          // Ignoruj chyby typu "table already exists" - může se stát při paralelních požadavcích
-          const errorMsg = stmtError instanceof Error ? stmtError.message : String(stmtError);
-          if (!errorMsg.includes("already exists") && !errorMsg.includes("duplicate")) {
-            console.warn(`Migration statement warning: ${errorMsg}`);
-          }
+    for (const statement of INIT_MIGRATION_STATEMENTS) {
+      try {
+        await tempPrisma.$executeRawUnsafe(statement);
+      } catch (stmtError) {
+        const errorMsg =
+          stmtError instanceof Error ? stmtError.message : String(stmtError);
+        // Ignoruj chyby typu "already exists" – tabulka/index už existuje
+        if (
+          !errorMsg.includes("already exists") &&
+          !errorMsg.includes("duplicate")
+        ) {
+          console.warn(`Migration statement warning: ${errorMsg}`);
         }
       }
-      globalForPrisma.migrationsRun = true;
-      console.log("Migrations completed successfully");
-    } catch (error) {
-      console.error("Migration error:", error);
-      throw error;
-    } finally {
-      await tempPrisma.$disconnect();
     }
+    globalForPrisma.migrationsRun = true;
+    console.log("Database schema ensured successfully");
+  } catch (error) {
+    console.error("Migration error:", error);
+    throw error;
+  } finally {
+    await tempPrisma.$disconnect();
   }
 }
 
