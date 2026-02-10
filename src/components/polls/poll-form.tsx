@@ -61,9 +61,14 @@ export function PollForm({ authorId }: PollFormProps) {
         toast.error(data.error ?? "Nepodařilo se vytvořit anketu");
         return;
       }
+      const createdPoll = await res.json();
       toast.success("Anketa byla vytvořena");
-      router.push("/polls");
-      router.refresh();
+      
+      // Počkej chvíli, aby se databáze stihla uložit (pro Vercel SQLite)
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Použij window.location pro jistotu, že se data načtou
+      window.location.href = "/polls";
     } catch {
       toast.error("Nepodařilo se vytvořit anketu");
     } finally {

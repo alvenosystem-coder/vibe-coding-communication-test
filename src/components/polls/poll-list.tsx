@@ -11,21 +11,40 @@ export function PollList() {
   const [list, setList] = useState<PollWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchList = useCallback(async () => {
+  const fetchList = useCallback(async (retryCount = 0) => {
     setLoading(true);
     try {
       const res = await fetch("/api/polls");
       if (res.ok) {
         const data = await res.json();
         setList(data);
+      } else if (retryCount < 3) {
+        // Retry mechanismus pro Vercel SQLite - zkus to znovu po chvíli
+        setTimeout(() => fetchList(retryCount + 1), 1000 * (retryCount + 1));
+        return;
+      }
+    } catch (error) {
+      if (retryCount < 3) {
+        // Retry mechanismus při chybě
+        setTimeout(() => fetchList(retryCount + 1), 1000 * (retryCount + 1));
+        return;
       }
     } finally {
-      setLoading(false);
+      if (retryCount === 0) {
+        setLoading(false);
+      }
     }
   }, []);
 
   useEffect(() => {
     fetchList();
+    
+    // Automatické obnovení při návratu na stránku
+    const handleFocus = () => {
+      fetchList();
+    };
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
   }, [fetchList]);
 
   const handleVote = useCallback(

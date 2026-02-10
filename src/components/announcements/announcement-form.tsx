@@ -57,9 +57,14 @@ export function AnnouncementForm({ authorId }: AnnouncementFormProps) {
         toast.error(data.error ?? "Nepodařilo se vytvořit oznámení");
         return;
       }
+      const createdAnnouncement = await res.json();
       toast.success("Oznámení bylo vytvořeno");
-      router.push("/announcements");
-      router.refresh();
+      
+      // Počkej chvíli, aby se databáze stihla uložit (pro Vercel SQLite)
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      // Použij window.location pro jistotu, že se data načtou
+      window.location.href = "/announcements";
     } catch {
       toast.error("Nepodařilo se vytvořit oznámení");
     } finally {
