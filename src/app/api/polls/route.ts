@@ -6,6 +6,21 @@ import { NextResponse } from "next/server";
 export async function GET() {
   try {
     await ensureDatabase();
+    
+    // Zkontroluj, jestli jsou v databázi nějací zaměstnanci (pokud ne, databáze byla resetována)
+    const employeeCount = await prisma.employee.count({
+      where: { isActive: true, isDisabled: false },
+    });
+    
+    if (employeeCount === 0) {
+      console.log("Databáze je prázdná, spouštím automatickou synchronizaci zaměstnanců...");
+      try {
+        await syncAll();
+      } catch (syncError) {
+        console.error("Automatická synchronizace selhala:", syncError);
+      }
+    }
+    
     const polls = await prisma.poll.findMany({
       orderBy: [{ isActive: "desc" }, { createdAt: "desc" }],
       include: {
